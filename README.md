@@ -1,6 +1,6 @@
 # TrackFlow - Aplicativo de Rastreamento de Correios
 
-Bem-vindo ao repositório do TrackFlow, o aplicativo de rastreamento de encomendas desenvolvido pelo Grupo [Nome do Seu Grupo]. Este aplicativo foi criado como parte do trabalho da disciplina [Nome da Disciplina] da Universidade [Nome da Universidade].
+Bem-vindo ao repositório do TrackFlow, o aplicativo de rastreamento de encomendas desenvolvido pela nossa equipe(Citações da equipe ao final do arquivo). Este aplicativo foi criado como parte do trabalho da disciplina Soluções Mobile da Universidade UNISATC.
 
 ## Sobre o Projeto
 
