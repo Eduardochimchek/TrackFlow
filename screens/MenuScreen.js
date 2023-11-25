@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Animated, TextInput } from 'react-native';
 import { Card, Title, Paragraph } from 'react-native-paper';
 import LinearGradient from 'react-native-linear-gradient';
@@ -69,25 +69,26 @@ const MenuScreen = () => {
   const [newTrackingCode, setNewTrackingCode] = useState('');
 
   const fadeOutAnimations = useRef(
-    deliveries.map(() => new Animated.Value(1))
-  ).current;
+    deliveries.reduce((acc, delivery) => {
+      acc[delivery.id] = new Animated.Value(1);
+      return acc;
+    }, {})
+  );
+
+  useEffect(() => {
+    // Atualizar as animações quando as entregas mudam
+    const newAnimations = deliveries.reduce((acc, delivery) => {
+      acc[delivery.id] = new Animated.Value(1);
+      return acc;
+    }, {});
+
+    fadeOutAnimations.current = newAnimations;
+  }, [deliveries]);
+  
 
   const handleDelete = (id, index) => {
     const updatedDeliveries = deliveries.filter((delivery) => delivery.id !== id);
     setDeliveries(updatedDeliveries);
-  };
-
-  const handleDeleteWithAnimation = (id, index) => {
-    if (fadeOutAnimations[index]._value === 1) {
-      Animated.timing(fadeOutAnimations[index], {
-        toValue: 0,
-        duration: 400,
-        useNativeDriver: false,
-      }).start(() => {
-        handleDelete(id, index);
-        fadeOutAnimations[index].setValue(1);
-      });
-    }
   };
 
   const handleConsult = (delivery) => {
@@ -99,21 +100,33 @@ const MenuScreen = () => {
   };
 
   const handleAddDelivery = () => {
-    
-    // Feche o modal e limpe o estado do código de rastreamento
+    // Verifica se o código de rastreamento tem o comprimento correto
+    if (newTrackingCode.length !== 13) {
+      console.log("O código de rastreamento deve ter 13 caracteres.");
+      return;
+    }
+  
+    // Verifica se o ID já existe
+    const idAlreadyExists = deliveries.some((delivery) => delivery.id === newTrackingCode);
+    if (idAlreadyExists) {
+      console.log("Já existe uma entrega com esse código de rastreamento.");
+      return;
+    }
+  
+    // Cria a nova entrega
+    const newDelivery = {
+      id: newTrackingCode,
+      title: `Entrega ${deliveries.length + 1}`,
+      description: 'Nova Entrega',
+      statusHistory: [{ status: 'Em trânsito', location: 'Centro de Distribuição 1' }],
+    };
+  
+    // Adiciona a nova entrega ao estado
+    setDeliveries((prevDeliveries) => [...prevDeliveries, newDelivery]);
+  
+    // Fecha o modal e limpa o estado do código de rastreamento
     setNewTrackingCode('');
     toggleModal();
-  };
-
-  const generateRandomId = () => {
-    // Obtém o último ID existente
-    const lastId = deliveries.length > 0 ? parseInt(deliveries[deliveries.length - 1].id.replace(/\D/g, '')) : 0;
-  
-    // Gera um novo ID incrementando o último ID
-    const newId = lastId + 1;
-  
-    // Retorna o novo ID formatado
-    return `AA${newId}BR`;
   };
 
   return (
@@ -127,24 +140,8 @@ const MenuScreen = () => {
         >
           <Text style={styles.header}>Suas Entregas</Text>
         </LinearGradient>
+
         {deliveries.map((delivery, index) => (
-          <Animated.View
-            key={delivery.id}
-            style={[
-              styles.animatedCard,
-              { opacity: fadeOutAnimations[index] },
-              {
-                transform: [
-                  {
-                    translateX: fadeOutAnimations[index].interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [-500, 0],
-                    }),
-                  },
-                ],
-              },
-            ]}
-          >
             <Card style={[styles.card, index === deliveries.length - 1 && { marginBottom: 100 }]}>
               <Card.Content>
                 <Title style={styles.cardTitle}>{delivery.title}</Title>
@@ -158,19 +155,19 @@ const MenuScreen = () => {
                   <TouchableOpacity onPress={() => handleConsult(delivery)} style={styles.button}>
                     <Text style={styles.buttonText}>Consultar</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity onPress={() => handleDeleteWithAnimation(delivery.id, index)} style={styles.button}>
+                  <TouchableOpacity onPress={() => handleDelete(delivery.id, index)} style={styles.button}>
                     <Text style={styles.buttonText}>Excluir</Text>
                   </TouchableOpacity>
                 </View>
               </Card.Content>
             </Card>
-          </Animated.View>
         ))}
       </ScrollView>
 
       <TouchableOpacity
         style={[styles.addButton, { bottom: 36, right: 25 }]}
-        onPress={toggleModal}>
+        onPress={toggleModal}
+      >
         <Text style={styles.addButtonText}>+</Text>
       </TouchableOpacity>
 
@@ -180,9 +177,14 @@ const MenuScreen = () => {
           <TextInput
             style={styles.modalInput}
             placeholder="Código de rastreamento"
+            maxLength={13}
             onChangeText={(text) => setNewTrackingCode(text)}
           />
-          <TouchableOpacity style={styles.modalButton} onPress={handleAddDelivery}>
+          <TouchableOpacity
+            style={styles.modalButton}
+            onPress={handleAddDelivery}
+            disabled={newTrackingCode.length !== 13}
+          >
             <Text style={styles.modalButtonText}>Adicionar Entrega</Text>
           </TouchableOpacity>
         </View>
@@ -221,10 +223,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 2,
     borderRadius: 8,
-    overflow: 'hidden',
-  },
-  animatedCard: {
-    marginVertical: 8,
     overflow: 'hidden',
   },
   cardTitle: {
