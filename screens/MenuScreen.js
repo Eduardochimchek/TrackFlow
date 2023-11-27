@@ -176,7 +176,7 @@ const MenuScreen = () => {
           <Text style={styles.modalTitle}>Digite o código de rastreamento</Text>
           <TextInput
             style={styles.modalInput}
-            placeholder="Código de rastreamento"
+            placeholder="Exemplo: AA123456789BR"
             maxLength={13}
             onChangeText={(text) => setNewTrackingCode(text)}
           />
